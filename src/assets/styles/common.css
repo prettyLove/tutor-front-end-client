@@ -1,0 +1,114 @@
+@charset "utf-8";
+
+.clear, .clearfix:after { clear: both;}
+.clear, .clearfix:before, .clearfix:after { display:block; overflow:hidden; visibility:hidden; width:0; height:0;}
+.clearfix:before, .clearfix:after { content: '';}
+.clearfix { *zoom: 1; }
+
+.table_box { border-radius: 6px;  background: #fff; padding: 10px 20px 20px; box-shadow:0px 10px 8px 1px rgba(117,117,117,0.16); }
+.table_box > .title  { padding-bottom: 10px; position: relative; }
+.table_box > .title > h3 { font-size: 18px; color: #5a9a70; line-height: 36px; display: inline-block; font-weight: bold; float: left; }
+.table_box > .title > h3 .sub_title { font-size: 14px; color: #5a9a70; vertical-align: middle; line-height: 36px; margin-left: 12px; }
+
+/* 新增弹窗新增取消按钮样式 */
+.table_box .btn_box { float: right; margin-top: 8px; }
+.table_box .btn_box .item { margin-left: 6px; }
+
+.table_box .btn_box ul { display: inline;  }
+.table_box .btn_box ul li { display: inline;  }
+.table_box .btn_box .el-button { height: 36px; line-height: 36px; font-size: 14px; padding: 0px 20px; background-color: #5a9a70;}
+.table_box .btn_box .el-button:hover { background-color: #5a9a70cc; }
+.table_box .control_btns .el-button { font-size: 14px;}
+
+
+/*  翻页样式 */
+.el-pagination { margin-top: 10px; }
+.el-pagination button.btn-prev ,
+.el-pagination button.btn-next ,
+.el-pagination li.number { padding: 0; width: unset ; min-width: 24px; padding: 0 4px; height: 24px; line-height: 26px; outline: 1px solid #5a9a70; background-color: #fff; color: #666; font-size: 16px; }
+
+.el-pagination button.btn-prev ,
+.el-pagination button.btn-next ,
+.el-pagination .el-pager li {  margin-right: 6px;/* min-width: unset;*/  }
+.el-pagination li.number.active { background-color: #5a9a70; color: #fff; }
+
+.el-pagination button .el-icon { color: #666; }
+
+.dateTime{text-align: right;margin-bottom: 10px;}
+
+/*表格标题*/
+h3.table_title {font-size: 18px; line-height: 42px; color: #5a9a70; font-weight: bold;}
+
+/* 弹窗公共样式 */
+.el-dialog { border-radius:8px; }
+.el-dialog .el-dialog__body { padding: 20px; }
+.el-dialog .el-dialog__headerbtn { top: 10px;}
+.el-dialog .el-dialog__headerbtn .el-dialog__close { color: #ffffff; }
+.el-dialog__header { background: #5a9a70; color: #fff;  padding: 0 20px; line-height: 40px; border-radius: 8px 8px 0 0; }
+.el-dialog__title  { color: #fff;  }
+
+/* 查询 */
+.search_box_serarch_button { width: 100px;text-align: center }
+.search_box_input { height: 48px; width: 240px; margin-right: 60px; margin-left: 8px; }
+.search_box_span { margin-left: 12px;color: #5a9a70;font-size: 18px; font-weight: bold; }
+
+/* quillEditor 字体文本对齐问题 */
+.main_box .ql-toolbar.ql-snow .ql-picker-label { line-height: 23px; vertical-align: top; }
+.quill-editor .ql-toolbar  strong { font-weight: bold; }
+/*.quill-editor { min-height: 345px; }*/
+
+.control_btns {width: 120px; padding-right: 14px }
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    /*初始状态 透明度为0*/
+    40% {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    /*过渡状态 透明度为0*/
+    100% {
+        opacity: 1;
+        transform: translateY(0px);
+    }
+    /*结束状态 透明度为1*/
+}
+
+@-webkit-keyframes fade-in { /*针对webkit内核*/
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    40% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0px);
+    }
+}
+.fade_in {
+    min-height: 100%;
+    animation: fade-in;/*动画名称*/
+    animation-duration: 0.5s;/*动画持续时间*/
+    -webkit-animation:fade-in 0.5s;/*针对webkit内核*/
+}
+.main_body > .cont > * {
+    min-height: 100%;
+    animation: fade-in;/*动画名称*/
+    animation-duration: 0.3s;/*动画持续时间*/
+    -webkit-animation:fade-in 0.5s;/*针对webkit内核*/
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

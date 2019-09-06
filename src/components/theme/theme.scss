@@ -1,0 +1,181 @@
+@import "~@fortawesome/fontawesome-free/css/all.css";
+@import '~pretty-checkbox/src/pretty-checkbox.scss';
+
+@import "./theme-variables.scss";
+@import "./layout-variables.scss";
+
+@font-face {
+  font-family: 'MonaJane'; /*a name to be used later*/
+  src: url('./MonaJane.ttf'); /*URL to font*/
+}
+
+html, body, #app {
+  height: 100%;
+  font-family: 'MonaJane';
+}
+
+// .container-fluid {
+// 	max-width: 1200px;
+// }
+
+.table-grid {
+  .row {
+    margin-left: 0;
+    margin-right: 0;
+
+    &:last-of-type {
+      border-bottom: 1px solid $gray-200;
+    }
+
+    border-left: 1px solid $gray-200;
+  }
+
+  @for $i from 1 through 12 {
+    .col-#{$i} {
+      display: flex;
+      flex-direction: column;
+
+      min-height: 2.5rem;
+      border-top: 1px solid $gray-200;
+      border-right: 1px solid $gray-200;
+
+      overflow-x: hidden;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+
+      .grid-header, .grid-cell {
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+
+    }
+  }
+}
+
+@each $theme, $color in $theme-colors {
+  .btn-#{$theme} {
+    background-image: linear-gradient(30deg, #00000000, #ffffff66) !important;
+  }
+}
+
+@for $i from 5 through 10 {
+  .m-#{$i} {
+    margin: calc(0.25rem * #{$i}) !important;
+  }
+
+  .mt-#{$i} {
+    margin-top: calc(0.25rem * #{$i}) !important;
+  }
+
+  .mb-#{$i} {
+    margin-bottom: calc(0.25rem * #{$i}) !important;
+  }
+  
+  .ml-#{$i} {
+    margin-left: calc(0.25rem * #{$i}) !important;
+  }
+
+  .mr-#{$i} {
+    margin-right: calc(0.25rem * #{$i}) !important;
+  }
+
+  .mx-#{$i} {
+    margin-left: calc(0.25rem * #{$i}) !important;
+    margin-right: calc(0.25rem * #{$i}) !important;
+  }
+
+  .my-#{$i} {
+    margin-top: calc(0.25rem * #{$i}) !important;
+    margin-bottom: calc(0.25rem * #{$i}) !important;
+  }
+
+  .p-#{$i} {
+    padding: calc(0.25rem * #{$i}) !important;
+  }
+
+  .pt-#{$i} {
+    padding-top: calc(0.25rem * #{$i}) !important;
+  }
+
+  .pb-#{$i} {
+    padding-bottom: calc(0.25rem * #{$i}) !important;
+  }
+  
+  .pl-#{$i} {
+    padding-left: calc(0.25rem * #{$i}) !important;
+  }
+
+  .pr-#{$i} {
+    padding-right: calc(0.25rem * #{$i}) !important;
+  }
+
+  .px-#{$i} {
+    padding-left: calc(0.25rem * #{$i}) !important;
+    padding-right: calc(0.25rem * #{$i}) !important;
+  }
+
+  .py-#{$i} {
+    padding-top: calc(0.25rem * #{$i}) !important;
+    padding-bottom: calc(0.25rem * #{$i}) !important;
+  }
+}
+
+.btn {
+	color: white !important;
+}
+
+.btn-xs {
+  padding: .22rem .4rem !important; 
+  font-size: .7rem !important;
+  line-height: 1 !important;
+  border-radius: .2rem !important;
+}
+
+.horizontal-form {
+	position: relative;
+	$text-width: 5rem;
+	$field-height: 2.5rem;
+
+	min-height: $field-height;
+	font-size: $form-font-size;
+
+  &:not(:last-of-type) {
+    margin-bottom: 2rem;
+  }
+
+	label {
+		position: absolute;
+		width: $text-width;
+		line-height: $form-font-size;
+		top: calc((#{$field-height} - #{$form-font-size}) / 2);
+		margin: 0;
+	}
+
+	.form-control {
+		margin-left: $text-width;
+		width: calc(100% - #{$text-width});
+
+		&:not(textarea) {
+			height: $field-height;
+		}
+	}
+
+  .form-control-file {
+    margin-left: $text-width;
+    width: calc(100% - #{$text-width});
+  }
+
+	.form-check {
+		margin-left: $text-width;
+	}
+
+  .form-button {
+    margin-left: $text-width;
+  }
+}
+
+label {
+	font-size: $form-font-size;
+}
+
+@import "~bootstrap/scss/bootstrap.scss";

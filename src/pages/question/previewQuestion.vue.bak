@@ -1,0 +1,184 @@
+<template>
+    <div class="preview-question" >
+        <div class="title clearfix">
+            <h3>题目预览</h3>
+        </div>
+
+        <div v-if="question">
+            <div class="card-body">
+
+                <!--  题目内容   -->
+                <QuestionDisplayBlock v-bind:question="question" v-bind:displayAnswer="displayAnswer"/>
+
+                <div style="height: 20px;"></div>
+                <el-row>
+                    <el-col :span="3">
+                        <el-button size="middle" @click="()=>{onSwitchQuestion(-1)}"
+                                   v-bind:disabled="currentPage <= 1 && index <= 0">上一题
+                        </el-button>
+                    </el-col>
+
+                    <el-col :span="18">
+                       <div style="text-align: center;">
+                           <el-button size="middle" plain type="success" v-if="!question.isReviewed" @click="onApproveQuestion">审批</el-button>
+                           <el-button size="middle" plain type="primary" @click="onEditQuestion">编辑</el-button>
+                           <el-button size="middle" @click="onDisplayAnswer">
+                               {{displayAnswer ? '隐藏答案' : '显示答案'}}
+                           </el-button>
+                           <el-button v-if="reqCond!=null" size="middle"  @click="onGoBack">返回</el-button>
+                       </div>
+                    </el-col>
+
+                    <el-col :span="3">
+                        <div style="text-align: right;">
+                            <el-button size="middle" @click="()=>{onSwitchQuestion(1)}">下一题</el-button>
+                        </div>
+                    </el-col>
+
+                </el-row>
+
+                <div style="height: 70px;"></div>
+
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    import Swal from 'sweetalert2'
+    import QuestionDisplayBlock from '@/components/QuestionDisplayBlock/QuestionDisplayBlock.vue';
+    import {getQuestion,getTotalQuestion,approveQuestion} from '../../api/question';
+    import {questionTypeList} from '@/utils/const';
+
+    export default {
+        name:"previewQuestion",
+        components: {
+            QuestionDisplayBlock
+        },
+        props:{
+            question:{
+                type: Object,
+                default:()=>{
+                    return {}
+                },
+            },
+        },
+        data: function () {
+            return {
+                recordPerPage: 10,
+                // question: null,
+                displayAnswer: false,
+                currentPage: 1,
+                index: 0,
+                reqCond:null,
+            }
+        },
+
+        created() {
+            function shuffle(array) {
+                let currentIndex = array.length, temporaryValue, randomIndex;
+
+                // While there remain elements to shuffle...
+                while (0 !== currentIndex) {
+
+                    // Pick a remaining element...
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex -= 1;
+
+                    // And swap it with the current element.
+                    temporaryValue = array[currentIndex];
+                    array[currentIndex] = array[randomIndex];
+                    array[randomIndex] = temporaryValue;
+                }
+
+                return array;
+            }
+
+            // this.reqCond = this.$route.query.reqCond;
+            // this.question = this.$route.query.question;
+            // this.index = this.$route.query.index;
+
+            // getQuestion(this.currentPage).then(response => {
+            //     this.question = response.data[this.index];
+            //
+            //     this.question.subQuestions.map(subQuestion => {
+            //         if (subQuestion.type === 'MC') {
+            //             subQuestion.answer.value = shuffle(subQuestion.answer.value);
+            //         }
+            //     })
+            // })
+
+            getTotalQuestion().then(response => {
+                this.recordPerPage = response.data.recordPerPage;
+            })
+        },
+
+        methods: {
+            // 上一题目
+            onApproveQuestion() {
+                approveQuestion(this.question.id).then(response => {
+                    this.question.isReviewed = true;
+                    Swal('成功', '成功审批问题。', 'success');
+                })
+            },
+            // 下一题目
+            onSwitchQuestion(offset) {
+                console.log(this.index);
+                return;
+                let currentPage = Number(this.currentPage);
+                let index = Number(this.index) + offset;
+                if (index > this.recordPerPage - 1) {
+                    index -= this.recordPerPage;
+                    currentPage += 1;
+                }
+                if (index < 0) {
+                    index += this.recordPerPage;
+                    currentPage -= 1;
+                }
+
+                this.$router.push({
+                    name: 'preview-question', params: {
+                        currentPage: currentPage,
+                        index: index
+                    }
+                });
+                this.$router.go();
+            },
+            // 编辑
+            onEditQuestion() {
+               /* this.apiService.getQuestionDefinition(this.question.id).then(response => {
+                    this.$router.push({
+                        path: '/question/addQuestion',
+                        query: {
+                            question: response.data,
+                            reqCond: this.reqCond,
+                        }
+                    })
+                })*/
+                this.$router.push({
+                    path: '/question/addQuestion',
+                    query: {
+                        question: this.question,
+                        reqCond: this.reqCond,
+                    }
+                })
+            },
+
+            // 显示答案
+            onDisplayAnswer() {
+                this.displayAnswer = !this.displayAnswer;
+            },
+            // 返回
+            onGoBack() {
+                this.$router.push({
+                    path: '/question/questionList',
+                    query: {
+                        reqCond : this.reqCond,
+                    },
+                });
+            },
+
+
+        }
+    }
+</script>

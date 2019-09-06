@@ -1,0 +1,34 @@
+$white:  #fff;
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #868e96;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+$black:  #000;
+
+$blue:       #4285f4;
+$indigo:     #6610f2;
+$purple:     #9e76f7;
+$pink:       #e83e8c;
+$red:        #ea4335;
+$orange:     #fd7e14;
+$yellow:     #efa402;
+$green:      #34a853;
+$teal:       #20c997;
+$cyan:       #5ecdf2;
+$light-pink: #ed907d;
+
+$theme-colors: (
+	primary: #418a5a,
+	secondary: $gray-600,
+	success: $green,
+	info: $purple,
+	warning: $yellow,
+	danger: $red,
+	light: $gray-100,
+	dark: $gray-800
+);

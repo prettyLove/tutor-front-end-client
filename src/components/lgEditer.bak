@@ -1,0 +1,399 @@
+<template>
+    <div>
+        <vue-editor ref="editer" v-model="currentValue" :disabled="disabled" :editorToolbar="editorToolbar" :placeholder="placeholder"/>
+        <!--<div>{{currentValue}}</div>-->
+        <div style="margin-top: 6px;" v-if="!disabled && useUploadWordFile">
+            <el-upload
+                :action="$orderApi.uploadRouter.wordToHtmlString"
+                :show-file-list="false"
+                :before-upload="beforeAvatarUpload"
+                :on-success="onUploadSuccess"
+                :on-error="onUploadError"
+                :before-remove="beforeRemove"
+                multiple
+                :file-list="fileList">
+                <el-button size="small" type="primary">word上传</el-button>
+                <div slot="tip" class="el-upload__tip">上传word到编辑器中（文件上限30MB）</div>
+            </el-upload>
+        </div>
+    </div>
+
+</template>
+
+<script>
+    import { VueEditor } from 'vue2-editor'
+
+    const rtftool={
+        /**
+         * Method parses RTF content to find embedded images. Please be aware that this method should only return `png` and `jpeg` images.
+         *
+         * @private
+         * @since 4.8.0
+         * @param {String} rtfContent RTF content to be checked for images.
+         * @returns {Object[]} An array of images found in the `rtfContent`.
+         * @returns {String} return.hex Hexadecimal string of an image embedded in `rtfContent`.
+         * @returns {String} return.type String represent type of image, allowed values: 'image/png', 'image/jpeg'.
+         * @member CKEDITOR.plugins.pastefromword.images
+         */
+        extractFromRtf: function( rtfContent ) {
+            var ret = [],
+                rePictureHeader = /\{\\pict[\s\S]+?\\bliptag\-?\d+(\\blipupi\-?\d+)?(\{\\\*\\blipuid\s?[\da-fA-F]+)?[\s\}]*?/,
+                rePicture = new RegExp( '(?:(' + rePictureHeader.source + '))([\\da-fA-F\\s]+)\\}', 'g' ),
+                wholeImages,
+                imageType;
+
+            wholeImages = rtfContent.match( rePicture );
+            if ( !wholeImages ) {
+                return ret;
+            }
+
+            for ( var i = 0; i < wholeImages.length; i++ ) {
+                if ( rePictureHeader.test( wholeImages[ i ] ) ) {
+                    if ( wholeImages[ i ].indexOf( '\\pngblip' ) !== -1 ) {
+                        imageType = 'image/png';
+                    } else if ( wholeImages[ i ].indexOf( '\\jpegblip' ) !== -1 ) {
+                        imageType = 'image/jpeg';
+                    } else {
+                        continue;
+                    }
+
+                    ret.push( {
+                        hex: imageType ? wholeImages[ i ].replace( rePictureHeader, '' ).replace( /[^\da-fA-F]/g, '' ) : null,
+                        type: imageType
+                    } );
+                }
+            }
+
+            return ret;
+        },
+
+        /**
+         * Method extracts array of src attributes in img tags from given HTML. Img tags belonging to VML shapes are removed.
+         *
+         *		CKEDITOR.plugins.pastefromword.images.extractTagsFromHtml( html );
+         *		// Returns: [ 'http://example-picture.com/random.png', 'http://example-picture.com/another.png' ]
+         *
+         * @private
+         * @param {String} html String represent HTML code.
+         * @returns {String[]} Array of strings represent src attribute of img tags found in `html`.
+         * @member CKEDITOR.plugins.pastefromword.images
+         */
+        extractTagsFromHtml: function( html ) {
+            var regexp = /<img[^>]+src="([^"]+)[^>]+/g,
+                ret = [],
+                item;
+
+            while ( item = regexp.exec( html ) ) {
+                ret.push( item[ 1 ] );
+            }
+
+            return ret;
+        },
+        convertBytesToBase64: function   ( bytesArray ) {
+            // Bytes are `8bit` numbers, where base64 use `6bit` to store data. That's why we process 3 Bytes into 4 characters representing base64.
+            //
+            // Algorithm:
+            // 1. Take `3 * 8bit`.
+            // 2. If there is less than 3 bytes, fill empty bits with zeros.
+            // 3. Transform `3 * 8bit` into `4 * 6bit` numbers.
+            // 4. Translate those numbers to proper characters related to base64.
+            // 5. If extra zero bytes were added fill them with `=` sign.
+            //
+            // Example:
+            // 1. Bytes Array: [ 8, 161, 29, 138, 218, 43 ] -> binary: `0000 1000 1010 0001 0001 1101 1000 1010 1101 1010 0010 1011`.
+            // 2. Binary: `0000 10|00 1010| 0001 00|01 1101| 1000 10|10 1101| 1010 00|10 1011` ← `|` (pipe) shows where base64 will cut bits during transformation.
+            // 3. Now we have 6bit numbers (written in decimal values), which are translated to indexes in `base64characters` array.
+            //    Decimal: `2 10 4 29 34 45 40 43` → base64: `CKEditor`.
+            var base64characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
+                base64string = '',
+                bytesArrayLength = bytesArray.length,
+                i;
+
+            for ( i = 0; i < bytesArrayLength; i += 3 ) {
+                var array3 = bytesArray.slice( i, i + 3 ),
+                    array3length = array3.length,
+                    array4 = [],
+                    j;
+
+                if ( array3length < 3 ) {
+                    for ( j = array3length; j < 3; j++ ) {
+                        array3[ j ] = 0;
+                    }
+                }
+
+                // 0xFC -> 11111100 || 0x03 -> 00000011 || 0x0F -> 00001111 || 0xC0 -> 11000000 || 0x3F -> 00111111
+                array4[ 0 ] = ( array3[ 0 ] & 0xFC ) >> 2;
+                array4[ 1 ] = ( ( array3[ 0 ] & 0x03 ) << 4 ) | ( array3[ 1 ] >> 4 );
+                array4[ 2 ] = ( ( array3[ 1 ] & 0x0F ) << 2 ) | ( ( array3[ 2 ] & 0xC0 ) >> 6 );
+                array4[ 3 ] = array3[ 2 ] & 0x3F;
+
+                for ( j = 0; j < 4; j++ ) {
+                    // Example: if array3length == 1, then we need to add 2 equal signs at the end of base64.
+                    // array3[ 0 ] is used to calculate array4[ 0 ] and array4[ 1 ], so there will be regular values,
+                    // next two ones have to be replaced with `=`, because array3[ 1 ] and array3[ 2 ] wasn't present in the input string.
+                    if ( j <= array3length ) {
+                        base64string += base64characters.charAt( array4[ j ] );
+                    } else {
+                        base64string += '=';
+                    }
+                }
+
+            }
+            return base64string;
+        },
+        convertHexStringToBytes:function ( hexString ) {
+            var bytesArray = [],
+                bytesArrayLength = hexString.length / 2,
+                i;
+
+            for ( i = 0; i < bytesArrayLength; i++ ) {
+                bytesArray.push( parseInt( hexString.substr( i * 2, 2 ), 16 ) );
+            }
+            return bytesArray;
+        },
+
+    };
+
+    export default {
+        name: "lgEditer",
+        data() {
+            return {
+                currentValue: ( this.value === undefined || this.value === null ) ? '' : this.value,
+                rtftool,
+                fileList:[],
+            }
+        },
+        props:{
+            value: String,
+            // 提示
+            placeholder:{
+                type: String,
+                defalut:"请输入",
+            },
+            useUploadWordFile:{
+                type:Boolean,
+                defalut: true,
+            },
+            // disabled 为true 时不使用 上传word 转 html 功能
+            disabled:Boolean,
+            editorToolbar:Array,
+        },
+        model: {
+            prop: 'value',
+            event: 'setValue'
+        },
+        watch:{
+            currentValue(val, oldValue) {
+                this.valueChange(val);
+            },
+            value(val, oldValue) {
+                this.currentValue =  val;
+            },
+        },
+        mounted: function () {
+            this.$el.addEventListener('paste', this.pasteEvent);
+        },
+        destroyed: function () {
+            this.$el.removeEventListener('paste', this.pasteEvent);
+        },
+        methods: {
+            valueChange:function(value) {
+                this.$emit('setValue', this.currentValue);
+            },
+            setValue:function(value){
+                this.currentValue =  value;
+            },
+            createSrcWithBase64: function (img) {
+                return img.type ? 'data:' + img.type + ';base64,' + this.rtftool.convertBytesToBase64(this.rtftool.convertHexStringToBytes(img.hex)) : null;
+            },
+            // 粘贴事件
+            pasteEvent: function (e) {
+                var clip = (e.clipboardData || window.clipboardData);
+                var _self = this;
+                if (clip) {
+                    var files = clip.files;
+                    if (files && files.length > 0) {
+                        // 处理剪切板的图片
+                        console.log(files);
+                        function loadFile(file) {
+                            var reader = new FileReader();
+                            reader.onload = (event)=> {
+                                var img_base64 = event.target.result;
+                                // console.log(img_base64);
+                                // _self.disableInput();
+                                // _self.setValue(_self.currentValue + "<p><img src=\"" + img_base64 + "\"  ></p>");
+                                // _self.enableInput();
+                                if(_self.$refs.editer){
+                                    var ed = _self.$refs.editer;
+                                    // console.log(ed);
+                                    //把获取到的图片url 插入到鼠标所在位置 回显图片
+                                    // console.log("cursorLocation",ed.quill);
+                                    var selection = ed.quill.getSelection();
+                                    if(selection){
+                                        let length = selection.index;
+                                        console.log("index",length)
+                                        // 插入图片 res.url为服务器返回的图片地址
+                                        ed.quill.insertEmbed(length, 'image', img_base64);
+                                        // 调整光标到最后
+                                        ed.quill.setSelection(length + 1);
+                                    }
+                                    // ed.quill.insertEmbed(ed.quill.getSelection().index, 'image', img_base64);
+                                }
+
+                            };
+                            reader.readAsDataURL(file);
+                        }
+
+                        for (var i = 0; i < files.length; i++) {
+                            loadFile(files[i])
+                        }
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return;
+                    }
+
+                    // debugger
+                    var html = clip.getData('text/html', true);
+                    var rtf = clip.getData('text/rtf', true);
+
+                    var imgTags = this.rtftool.extractTagsFromHtml(clip.getData('text/html', true));
+                    var hexImages = this.rtftool.extractFromRtf(rtf);
+
+                    if (hexImages.length > 0) {
+
+                        for (var i = 0; i < hexImages.length; i++) {
+                            var img = hexImages[i];
+                            var img_tag = imgTags[i];
+                            var img_base64 = this.createSrcWithBase64(img);
+                            html = html.replace(img_tag, img_base64);
+                        }
+                        var REG_BODY = /<body[^>]*>([\s\S]*)<\/body>/gmi;
+                        var result = REG_BODY.exec(html);
+                        if (result && result.length === 2) {
+                            var bodystr = result[1];
+                            //删除 XML元素声明
+                            bodystr = bodystr.replace(/<\/?\?xml[^>]*>/gi, "");
+                            //删除 XML元素命名空间声明: <o:p></o:p>
+                            bodystr = bodystr.replace(/<\/?\w+:[^>]*>/gi, "")
+                            html = bodystr;
+                        }
+
+                        // _self.setValue(_self.currentValue + html);
+                        // setTimeout(() => {
+                        //     // 获取选定对象
+                        //     var selection = window.getSelection();
+                        //     console.log("selection",selection);
+                        //     if(selection){
+                        //         selection.collapseToEnd();//光标移至最后
+                        //     }
+                        // }, 1300);
+
+                        if(_self.$refs.editer){
+                            let ed = _self.$refs.editer;
+                            let quill = ed.quill;
+
+                            setTimeout(()=>{
+                                //把获取到的图片url 插入到鼠标所在位置 回显图片
+                                var selection = quill.getSelection();
+                                console.log("selection",selection);
+                                if(selection){
+                                    let length = selection.index;
+                                    console.log("length",length);
+                                    // quill.insertText(length,html);
+                                    quill.pasteHTML(length,html);
+                                    // console.log(quill.pasteHTML)
+                                }
+                            },200);
+
+                        }
+
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            },
+            // 上传word 文件
+            uploadWordFile:function (evt) {
+                console.log("evt",evt.target.files);
+                if(evt.target.files && evt.target.files.length>0){
+                    var file = evt.target.files[0];
+                    /*if(!/image\/\w+/.test(file.type)){
+                        alert("看清楚，这个需要图片！");
+                        return false;
+                    }*/
+
+                    if (!/application\/\w+/.test(file.type)) {
+                        // alert("请选择word文件");
+                        this.$alert("请选择word文件");
+                        return false;
+                    }
+                    var reader = new FileReader();
+                    //将文件以Data URL形式读入页面
+                    reader.readAsDataURL(file);
+                    reader.onload=function(e){
+                        // 这里取到文件的 base64 编码  处理上传到服务器
+                    }
+                }
+
+            },
+            onUploadError:function(err, file, fileList){
+                this.$message("上传失败，请重新上传!" );
+            },
+            beforeRemove(file, fileList) {
+                // 文件超过10M 也会触发这里  所以这里要判断
+                if(this.beforeAvatarUpload(file)){
+                    //更新当前所有文件的list
+                    return this.$confirm(`确定移除 ${ file.name }？`);
+                }else{
+                    return this.$alert(`文件超过大小限制30MB [ ${ file.name } ]` );
+                }
+
+            },
+            onUploadSuccess:function(response, file, fileList){
+                var vm = this;
+                if (response.status ===  vm.$success) {
+                    vm.getContent(response.data)
+                    vm.fileList = fileList;
+                }else{
+                    vm.$message("上传错误:" +response.message);
+                    // 删除上传失败的文件
+                    for (let i = 0; i < fileList.length; i++) {
+                        let item = fileList[i];
+                        if(item == file){
+                            fileList.splice(i,1);
+                            break;
+                        }
+                    }
+                    vm.fileList = fileList;
+                }
+            },
+            //限制文件大小 30MB
+            beforeAvatarUpload(file) {
+                const limitSize = file.size / 1024 / 1024 < 30;
+                return limitSize;
+            },
+            //更新编辑器内容
+            getContent:function (data) {
+                let _self = this;
+                var REG_BODY = /<body[^>]*>([\s\S]*)<\/body>/gmi;
+                var result = REG_BODY.exec(data);
+                if (result && result.length === 2) {
+                    var bodystr = result[1];
+                    if(_self.$refs.editer){
+                        let ed = _self.$refs.editer;
+                        let quill = ed.quill;
+                        //拼接到最后面
+                        quill.pasteHTML(_self.currentValue.length,bodystr);
+                    }
+                }
+            },
+        },
+        components :{
+            VueEditor
+        },
+    }
+</script>
+
+<style scoped>
+
+</style>

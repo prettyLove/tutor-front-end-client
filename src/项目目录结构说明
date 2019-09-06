@@ -1,0 +1,8 @@
+asssets
+ -- styles -- 样式文件
+components  -- 组件目录
+ --
+pages --  展示页面
+route --  路由
+store --  数据操作
+utils --  工具类
